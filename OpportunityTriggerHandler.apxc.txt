@@ -1,0 +1,45 @@
+Public class OpportunityTriggerHandler{
+   
+    public static void afterUpdate(List<opportunity> newOppty,
+                                    Map<Id,Opportunity> oldOppty){
+    
+        Set<Id> opptyIds = new Set<Id>();
+        Map<id,Decimal> opptyIdWithAmountMap = new Map<Id,Decimal>();
+        
+        for(Opportunity oppt:newOppty){
+        
+            Opportunity oldOpportunity = oldOppty.get(oppt.id);
+        
+            if(oppt.Stage__c!=null 
+                && oppt.Stage__c == 'Pending'
+                && oppt.Stage__c != oldOpportunity.Stage__c){
+                opptyIds.add(oppt.Id); 
+                opptyIdWithAmountMap.put(oppt.Id,oppt.Amount);                   
+            }
+        }       
+        if(opptyIds.isEmpty()){
+            return;
+        }
+        
+        List<Sales_Agent__c> agents = new List<Sales_Agent__c>();
+        
+        for(Commission__c commissions :[SELECT id,Opportunity__c,Sales_Agent__c,Sales_Agent__r.Amount_Pending__c 
+                                        FROM Commission__c 
+                                        WHERE Opportunity__c IN:opptyIds]){
+                                        
+            Decimal oppyamount = 0;
+            if(opptyIdWithAmountMap.containsKey(commissions.Opportunity__c)){
+
+                oppyamount += opptyIdWithAmountMap.get(commissions.Opportunity__c);               
+            }
+          Sales_Agent__c sAgent = new Sales_Agent__c();
+          sAgent.Amount_Pending__c = oppyamount;
+          sAgent.Id = commissions.Sales_Agent__c;
+          agents.add(sAgent);                              
+        }
+        
+        if(!agents.IsEmpty()){
+            update agents;       
+        } 
+    }
+}

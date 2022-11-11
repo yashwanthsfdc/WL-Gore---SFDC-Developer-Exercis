@@ -1,0 +1,37 @@
+@isTest
+Public Class OpportunityTriggerHandlerTest{
+
+    @isTest
+    static void testAfterUpdate(){
+    
+    Test.startTest();
+    
+    Opportunity oppt = new Opportunity();
+    
+    oppt.Name = 'testOpp';
+    oppt.Closedate = System.today().adddays(5);
+    oppt.StageName = 'Qualification';
+    oppt.Stage__c = 'New';
+    oppt.Amount = 50;
+    
+    insert oppt;
+    
+    Sales_Agent__c sAgent = new Sales_Agent__c(); 
+    sAgent.Amount_Pending__c = 20;   
+    insert sAgent;
+    
+    Commission__c objCom = new Commission__c();
+    
+    objCom.Opportunity__c = oppt.Id;
+    objCom.Sales_Agent__c = sAgent.Id;
+    
+    insert objCom;
+    
+    oppt.Stage__c = 'Pending';
+    update oppt;
+    
+    Test.stopTest();
+    
+    }
+
+}

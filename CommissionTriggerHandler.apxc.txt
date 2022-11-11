@@ -1,0 +1,80 @@
+Public Class CommissionTriggerHandler{
+
+    public static void afterUpdate(List<Commission__c> commissions,
+                        Map<Id,Commission__c> oldCommissionsMap){
+                        
+        List<Commission__c> commissionToProcess = 
+                            new List<Commission__c>();
+        for(Commission__c objCommission:commissions){        
+            Commission__c oldcomm = oldCommissionsMap.get(objCommission.Id);
+            
+            if(objCommission.Opportunity__c != oldcomm.Opportunity__c
+                || objCommission.Sales_Agent__c != oldcomm.Sales_Agent__c){
+                
+                commissionToProcess.add(objCommission);
+            }                   
+        }
+        
+        if(!commissionToProcess.isEmpty()){
+            
+            afterInsert(commissionToProcess);        
+        }
+    }
+    
+    public static void afterInsert(List<Commission__c> commissions){
+    
+    
+        Set<Id> opptyIds = new Set<Id>();
+        Set<Id> agentIds = new Set<Id>();
+        
+        for(Commission__c objCommission:commissions){
+                
+            if(objCommission.Opportunity__c!=null){
+                opptyIds.add(objCommission.Opportunity__c);
+            }
+            
+            if(objCommission.Sales_Agent__c!=null){
+                agentIds.add(objCommission.Sales_Agent__c);
+            }
+        }
+        
+        Map<Id,Decimal> commIdWithCountOfAmountMap 
+                            = new Map<Id,Decimal>();
+        
+        if(!opptyIds.isEmpty()){
+        
+        
+            Decimal opptyAmount=0;
+            for(Commission__c objComm:[SELECT Id,Opportunity__r.Amount FROM Commission__c 
+                                  WHERE Opportunity__c IN:opptyIds
+                                  AND Opportunity__r.Stage__c = 'Pending']){
+            
+            
+            opptyAmount += objComm.Opportunity__r.Amount;
+            commIdWithCountOfAmountMap.put(objComm.Id,opptyAmount);    
+            
+            }
+        }
+        
+        
+        List<Sales_Agent__c> agentsToUpdate = new List<Sales_Agent__c>();
+        for(Commission__c objCommission:[SELECT id,Opportunity__c,Sales_Agent__c,Sales_Agent__r.Amount_Pending__c 
+                                         FROM Commission__c 
+                                         WHERE Opportunity__c IN:opptyIds 
+                                         AND Sales_Agent__c IN:agentIds]){
+        
+            Sales_Agent__c sAgents = new Sales_Agent__c();
+            if(commIdWithCountOfAmountMap.containsKey(objCommission.Id)){
+            
+                sAgents.Amount_Pending__c = commIdWithCountOfAmountMap.get(objCommission.Id);
+                sAgents.Id = objCommission.Sales_Agent__c;
+                agentsToUpdate.add(sAgents);
+            }
+        }
+        
+        if(!agentsToUpdate.isEmpty()){
+        
+            update agentsToUpdate;
+        }   
+    }
+}

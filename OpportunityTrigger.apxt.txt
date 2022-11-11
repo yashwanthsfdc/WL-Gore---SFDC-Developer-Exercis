@@ -1,0 +1,7 @@
+trigger OpportunityTrigger on Opportunity (after update) {
+
+    if(trigger.isUpdate){
+        OpportunityTriggerHandler.afterUpdate(trigger.new,trigger.oldMap);
+    }
+    
+}

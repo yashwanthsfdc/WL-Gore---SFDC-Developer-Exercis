@@ -1,0 +1,11 @@
+trigger commissionTrigger on Commission__c (After Insert,After Update) {
+
+    if(trigger.isInsert){
+        CommissionTriggerHandler.afterInsert(Trigger.new);
+    }
+    
+    if(trigger.isUpdate){
+        CommissionTriggerHandler.afterUpdate(Trigger.new,Trigger.oldMap);
+    }
+    
+}
