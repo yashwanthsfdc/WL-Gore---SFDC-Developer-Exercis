@@ -1,0 +1,3 @@
+I have written logic to update count of amount in opportunity to update the total value to Amount pending in sales agents.
+
+What if we have multiple sales agents for the same commission object, because this is like junction object.
